@@ -1,0 +1,21 @@
+# Environnements Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Fichiers d'environnement & Cles secretes
+.env
+
+# Logs & dbt target
+target/
+dbt_packages/
+logs/
+
+# Data bases locales (DuckDB / Postgres local)
+*.duckdb
+*.sqlite
+*.db
+
+# Airflow
+standalone_db_*.db
