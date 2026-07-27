@@ -5,12 +5,17 @@ __pycache__/
 *.py[cod]
 
 # Fichiers d'environnement & Cles secretes
-.env
+docker/.env
+.env.local
+vercel-app/.env.local
+docker/.env.vercel
 
 # Logs & dbt target
 target/
 dbt_packages/
 logs/
+dbt_project/target/
+dbt_project/logs/
 
 # Data bases locales (DuckDB / Postgres local)
 *.duckdb
@@ -19,3 +24,15 @@ logs/
 
 # Airflow
 standalone_db_*.db
+
+# Next.js
+vercel-app/.next/
+vercel-app/out/
+vercel-app/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

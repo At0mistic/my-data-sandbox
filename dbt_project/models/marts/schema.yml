@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: fct_weather
+    description: "Dernières relevés météo avec descriptions et calculs pour le dashboard"
+    columns:
+      - name: city
+        description: "Ville (Nantes ou Paris)"
+        tests:
+          - not_null
+      - name: temperature_celsius
+        description: "Température en Celsius"
+      - name: windspeed_kmh
+        description: "Vitesse du vent en km/h"
+      - name: weather_code
+        description: "Code météo WMO"
+      - name: weather_description
+        description: "Description lisible du code météo"
+      - name: fetched_at
+        description: "Timestamp du relevé"
+        tests:
+          - not_null

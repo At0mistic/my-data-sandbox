@@ -5,16 +5,18 @@ x-airflow-common:
   image: apache/airflow:2.9.2-python3.10
   environment:
     &airflow-common-env
+    PYTHONPATH: /opt/airflow
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-data_warehouse}
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__TEST_CONNECTION: 'Enabled'
   volumes:
-    - ./dags:/opt/airflow/dags
-    - ./scripts:/opt/airflow/scripts
-    - ./dbt_project:/opt/airflow/dbt_project
-    - ./logs:/opt/airflow/logs
+    - ../dags:/opt/airflow/dags
+    - ../scripts:/opt/airflow/scripts
+    - ../dbt_project:/opt/airflow/dbt_project
+    - ../logs:/opt/airflow/logs
   user: "${AIRFLOW_UID:-50000}:0"
 
 services:
@@ -37,7 +39,15 @@ services:
   airflow-init:
     <<: *airflow-common
     command: >
-      bash -c "airflow db migrate && airflow users create --username $${AIRFLOW_WWW_USER_USERNAME:-airflow} --firstname Admin --lastname User --role Admin --email admin@example.com --password $${AIRFLOW_WWW_USER_PASSWORD:-airflow}"
+      bash -c "airflow db migrate && 
+      airflow users create --username $${AIRFLOW_WWW_USER_USERNAME:-airflow} --firstname Admin --lastname User --role Admin --email admin@example.com --password $${AIRFLOW_WWW_USER_PASSWORD:-airflow} &&
+      python /opt/airflow/create_connections.py"
+    volumes:
+      - ../dags:/opt/airflow/dags
+      - ../scripts:/opt/airflow/scripts
+      - ../dbt_project:/opt/airflow/dbt_project
+      - ../logs:/opt/airflow/logs
+      - ./create_connections.py:/opt/airflow/create_connections.py
     depends_on:
       postgres:
         condition: service_healthy

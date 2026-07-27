@@ -1,0 +1,23 @@
+weather_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost       # Ou 'postgres' si dbt est exécuté dans Docker
+      user: postgres
+      pass: postgres
+      port: 5432
+      dbname: data_warehouse
+      schema: public
+      threads: 4
+    
+    prod:
+      type: postgres
+      host: "{{ env_var('VERCEL_POSTGRES_HOST') }}"
+      user: "{{ env_var('VERCEL_POSTGRES_USER') }}"
+      pass: "{{ env_var('VERCEL_POSTGRES_PASSWORD') }}"
+      port: "{{ env_var('VERCEL_POSTGRES_PORT') | as_number }}"
+      dbname: "{{ env_var('VERCEL_POSTGRES_DB') }}"
+      schema: public
+      threads: 2
+      sslmode: require
