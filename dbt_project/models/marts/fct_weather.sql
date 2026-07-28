@@ -1,5 +1,4 @@
 -- Modèle d'exposition: Dernières relevés météo avec calculs
--- Utilisé par le dashboard Next.js pour afficher les données actuelles
 
 WITH weather_staged AS (
     SELECT 

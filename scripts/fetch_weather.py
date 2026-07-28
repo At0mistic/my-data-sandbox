@@ -5,7 +5,8 @@ from datetime import datetime
 # Villes à suivre : Nantes et Paris
 CITIES = {
     "Nantes": {"lat": 47.2184, "lon": -1.5536},
-    "Paris": {"lat": 48.8566, "lon": 2.3522}
+    "Paris": {"lat": 48.8566, "lon": 2.3522},
+    "Dublin": {"lat": 53.3498, "lon": -6.2603}
 }
 
 def get_weather_data(city_name: str) -> dict:

@@ -26,10 +26,10 @@ default_args = {
 )
 def weather_ingestion_pipeline():
 
-    # Task 1 : Création de la table 'raw_weather' si elle n'existe pas dans Vercel PostgreSQL
+    # Task 1 : Création de la table 'raw_weather' si elle n'existe pas.
     create_table = PostgresOperator(
         task_id='create_raw_table',
-        postgres_conn_id='postgres_vercel',
+        postgres_conn_id='postgres_local',
         sql="""
             CREATE TABLE IF NOT EXISTS stg_raw_weather (
                 id SERIAL PRIMARY KEY,
@@ -40,11 +40,11 @@ def weather_ingestion_pipeline():
         """
     )
 
-    # Task 2 : Extraction et insertion pour chaque ville (dans Vercel DB)
+    # Task 2 : Extraction et insertion pour chaque ville
     @task
     def fetch_and_store_weather():
-        # Connexion à Postgres Vercel via le hook Airflow
-        pg_hook = PostgresHook(postgres_conn_id='postgres_vercel')
+        # Connexion à Postgres via le hook Airflow
+        pg_hook = PostgresHook(postgres_conn_id='postgres_local')
         conn = pg_hook.get_conn()
         cursor = conn.cursor()
 
