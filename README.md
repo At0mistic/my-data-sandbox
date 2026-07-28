@@ -1,121 +1,213 @@
-# Data Engineering Sandbox
+# Weather Dashboard: Airflow + dbt + Next.js
 
-Projet full-stack: Ingestion de données météo → Transformation dbt → Dashboard Next.js sur Vercel.
+Complete data pipeline with development/production separation.
+
+**Stack:** Apache Airflow | PostgreSQL | dbt | Next.js | Vercel
+
+---
+
+## 🚀 Quick Start (5 Minutes)
+
+### 1. Fix Docker Permission (First Time Only)
+```bash
+sudo usermod -aG docker $USER
+# Log out and log back in
+```
+
+### 2. Start Services
+```bash
+cd docker
+docker compose up -d
+sleep 30
+docker compose ps  # Verify all running
+```
+
+### 3. Trigger Data Ingestion
+- Open http://localhost:8080 (Airflow)
+- Login: `airflow` / `airflow`
+- Find `weather_ingestion_etl` DAG
+- Click ▶️ trigger button
+- Wait for completion (~1-2 min)
+
+### 4. Test Locally
+```bash
+cd vercel-app
+npm install
+npm run dev
+# Open http://localhost:3000
+```
+
+### 5. Deploy to Vercel
+```bash
+# Push code
+git add -A && git commit -m "Weather dashboard" && git push
+
+# Deploy (choose one)
+# Option A: CLI
+npm install -g vercel && cd vercel-app && vercel
+
+# Option B: Dashboard
+# Go to https://vercel.com/new → Select repo → Deploy
+```
+
+**Set environment variable in Vercel dashboard:**
+- Settings → Environment Variables
+- Add: `DATABASE_URL=postgres://b79...@db.prisma.io:5432/postgres?sslmode=require`
+- Click Save
+
+✅ **Done!** Dashboard live at: `https://YOUR_PROJECT.vercel.app`
+
+---
 
 ## 🏗️ Architecture
 
 ```
-Weather API (Open-Meteo)
-         ↓
-    Airflow DAG (hourly)
-         ↓
-  Vercel PostgreSQL
-      ↙        ↖
-   dbt          Next.js
-  (marts)      (Dashboard)
+Open-Meteo API (Weather Data)
+    ↓
+Airflow (Orchestration - Docker)
+    ↓
+PostgreSQL (Storage)
+    ├─ LOCAL:  localhost:5432 (via .env.local)
+    └─ PROD:   db.prisma.io (via .env.production.local)
+    ↓
+dbt (Transformation)
+    ├─ dev:   localhost → fct_weather
+    └─ prod:  Vercel DB → fct_weather
+    ↓
+Next.js API
+    ├─ /api/weather         (all cities)
+    └─ /api/weather/[city]  (specific city)
+    ↓
+Dashboard UI
+    ├─ LOCAL:  localhost:3000
+    └─ PROD:   vercel.app
 ```
 
-## 🛠️ Technologies
+**Key Principle:** Single source of truth = Vercel PostgreSQL (same DB for dev & prod)
 
-- **Orchestration:** Apache Airflow (Docker)
-- **Transformation:** dbt Core
-- **Database:** PostgreSQL (Vercel managed)
-- **Frontend:** Next.js + React + Recharts
-- **Deployment:** Vercel
-- **Language:** Python, TypeScript
+---
 
-## 📦 Structure du Projet
+## 📁 Project Structure
 
 ```
-├── dags/                          # Airflow DAGs
-│   └── weather_ingestion_dag.py   # Ingestion toutes les heures
-├── scripts/
-│   ├── fetch_weather.py           # Fonction pour API Open-Meteo
-│   └── init_vercel_db.sh          # Initialisation DB Vercel
-├── dbt_project/
-│   ├── models/
-│   │   ├── stg/                   # Staging (raw data)
-│   │   └── marts/                 # Marts (transformed data for BI)
-│   └── profiles.yml               # Config dbt (dev + prod Vercel)
-├── docker/
-│   ├── docker-compose.yml         # Airflow + PostgreSQL local
-│   └── .env                       # Credentials Vercel
-├── vercel-app/                    # Next.js application
-│   ├── pages/api/                 # API routes (PostgreSQL queries)
-│   ├── pages/index.tsx            # Dashboard UI
-│   └── lib/db.ts                  # Connection pooling
-└── DEPLOYMENT_GUIDE.md            # Guide complet de déploiement
+.
+├── docker/                      # Docker & Airflow
+│   ├── docker-compose.yml       # Services: postgres, airflow
+│   ├── .env                     # Vercel credentials (gitignored)
+│   └── create_connections.py    # Setup postgres_vercel connection
+│
+├── dags/                        # Airflow DAGs
+│   └── weather_ingestion_dag.py # Fetch weather hourly
+│
+├── scripts/                     # Python utilities
+│   └── fetch_weather.py         # Open-Meteo API client
+│
+├── dbt_project/                 # dbt transformations
+│   ├── profiles.yml             # dev & prod targets
+│   ├── models/stg/              # Staging layer
+│   └── models/marts/            # Final models (fct_weather)
+│
+├── vercel-app/                  # Next.js dashboard
+│   ├── .env.local               # LOCAL: localhost:5432
+│   ├── .env.production.local    # PROD: db.prisma.io
+│   ├── lib/db.ts                # Connection pool
+│   ├── pages/api/weather.ts     # API endpoints
+│   └── pages/index.tsx          # Dashboard UI
+│
+└── README.md                    # This file
 ```
 
-## 🚀 Quick Start
+---
 
-### 1. Initialiser Vercel PostgreSQL
+## ⚙️ Configuration
+
+### .env Files
 ```bash
-bash scripts/init_vercel_db.sh
+# vercel-app/.env.local (Development)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/data_warehouse"
+
+# vercel-app/.env.production.local (Production)
+DATABASE_URL="postgres://b79...@db.prisma.io:5432/postgres?sslmode=require"
 ```
 
-### 2. Démarrer Airflow (ingestion)
+### dbt Targets
 ```bash
-cd docker
-docker compose up -d
-# Accéder à http://localhost:8080
+dbt run --target dev    # Uses localhost
+dbt run --target prod   # Uses Vercel DB
 ```
 
-### 3. Exécuter dbt (transformations)
-```bash
-cd dbt_project
-dbt run --target prod
-```
-
-### 4. Démarrer Next.js (dashboard)
-```bash
-cd vercel-app
-npm install && npm run dev
-# Accéder à http://localhost:3000
-```
-
-## 📖 Documentation Complète
-
-Voir [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) pour:
-- Configuration détaillée de chaque composant
-- Instructions de déploiement sur Vercel
-- Tests de validation
-- Troubleshooting
+---
 
 ## 📊 Data Flow
 
-1. **Ingestion (Airflow)** 
-   - Fetch données Open-Meteo (Nantes, Paris)
-   - Insérer dans `stg_raw_weather` (Vercel DB)
-   - Toutes les heures
+**Development:** Airflow → Vercel DB ← npm run dev → localhost:3000
 
-2. **Transformation (dbt)**
-   - Transformation brute → vue `stg_weather`
-   - Agrégation et descriptions → table `fct_weather`
-   - Source pour le dashboard
+**Production:** Airflow → Vercel DB ← Vercel deployment → vercel.app
 
-3. **Visualisation (Next.js)**
-   - API routes interrogent `fct_weather`
-   - React composants affichent graphiques
-   - Déployé sur Vercel (près de la BD)
+---
 
-## 🔑 Environment Variables
+## 🔧 Common Commands
 
-**docker/.env:**
-```
-VERCEL_POSTGRES_HOST=db.prisma.io
-VERCEL_POSTGRES_USER=xxxxx
-VERCEL_POSTGRES_PASSWORD=xxxxx
-...
-```
+```bash
+# Start services
+cd docker && docker compose up -d
 
-**vercel-app/.env.local:**
-```
-DATABASE_URL=postgres://user:pass@host/db?sslmode=require
+# View logs
+docker compose logs -f [service]
+
+# Run dbt
+cd dbt_project && dbt run --target dev
+
+# Start dashboard
+cd vercel-app && npm run dev
+
+# Stop services
+docker compose down
 ```
 
-## 📝 Notes
+---
 
-- **Hobby Plan:** 1GB stockage, ~100 connexions, gratuit
-- **Refresh:** Données mises à jour toutes les heures par Airflow
-- **Security:** Ne pas commiter `.env` (voir .gitignore)
+## 🆘 Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Docker permission denied | `sudo usermod -aG docker $USER` → logout/in |
+| Airflow won't start | `docker compose logs airflow-init` |
+| DAG not visible | Wait 30s, refresh page |
+| dbt connection fails | `dbt debug --target dev` |
+| No data in dashboard | 1) Trigger DAG 2) Run dbt 3) Refresh app |
+| Vercel deploy fails | Check `DATABASE_URL` in dashboard env vars |
+
+---
+
+## 🔐 Security
+
+- ✅ `.env*` files in `.gitignore` (never committed)
+- ✅ No credentials in source code
+- ✅ Uses `process.env.DATABASE_URL` only
+- ✅ Vercel env vars set in dashboard
+
+---
+
+## 📚 Key Concepts
+
+- **Single Source of Truth:** Same Vercel DB for dev & prod (no duplication)
+- **Environment Switching:** Automatic via `.env.local` vs `.env.production.local`
+- **dbt Targets:** `dev` (localhost) and `prod` (Vercel)
+- **Airflow Connection:** `postgres_vercel` feeds Vercel PostgreSQL
+
+---
+
+## ✅ Deployment Checklist
+
+- [ ] Local dashboard works (http://localhost:3000)
+- [ ] All files committed to GitHub
+- [ ] `.env*` files protected in `.gitignore`
+- [ ] Code pushed to GitHub
+- [ ] Vercel deployment complete
+- [ ] `DATABASE_URL` set in Vercel dashboard
+- [ ] Live dashboard accessible
+
+---
+
+**Ready?** Follow Quick Start above! 🚀
