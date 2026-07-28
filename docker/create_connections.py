@@ -20,7 +20,7 @@ print(f"  Host: {vercel_host}")
 print(f"  User: {vercel_user[:10]}...")  # Hide sensitive info
 print(f"  Database: {vercel_db}")
 
-# Create the connection
+# Create the connection to vercel DB
 conn = Connection(
     conn_id='postgres_vercel',
     conn_type='postgres',
@@ -32,6 +32,18 @@ conn = Connection(
     extra='{"sslmode": "require"}'
 )
 
+conn_local = Connection(
+    conn_id='postgres_local',
+    conn_type='postgres',
+    host='postgres',
+    port=5432,
+    login=os.getenv('POSTGRES_USER', 'postgres'),
+    password=os.getenv('POSTGRES_PASSWORD', 'postgres'),
+    schema=os.getenv('POSTGRES_DB', 'data_warehouse'),
+    extra='{"sslmode": "disable"}'
+)
+
 # Save connection
 merge_conn(conn)
+merge_conn(conn_local)
 print("✓ Connection created successfully!")
