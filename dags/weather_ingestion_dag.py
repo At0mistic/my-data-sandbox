@@ -3,6 +3,7 @@ import json
 from airflow.decorators import dag, task
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.operators.bash import BashOperator
 
 import sys
 import os
@@ -65,8 +66,17 @@ def weather_ingestion_pipeline():
         cursor.close()
         conn.close()
 
+    # 3. Tâche dbt build (Exécute staging, intermediate et marts avec tests)
+    run_dbt_models = BashOperator(
+        task_id='run_dbt_models',
+        bash_command='''
+            cd /opt/airflow/dbt_project && \
+            dbt build --profiles-dir .
+        '''
+    )
+
     # Chaînage des tâches
-    create_table >> fetch_and_store_weather()
+    create_table >> fetch_and_store_weather() >> run_dbt_models
 
 # Instanciation du DAG
 weather_ingestion_pipeline()

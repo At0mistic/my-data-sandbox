@@ -2,21 +2,22 @@ version: 2
 
 models:
   - name: fct_weather
-    description: "Dernières relevés météo avec descriptions et calculs pour le dashboard"
+    description: "Table de faits contenant les relevés météo horaires enrichis des agrégats quotidiens."
     columns:
       - name: city
-        description: "Ville (Nantes ou Paris)"
+        description: "Nom de la ville."
         tests:
           - not_null
-      - name: temperature_celsius
-        description: "Température en Celsius"
-      - name: windspeed_kmh
-        description: "Vitesse du vent en km/h"
-      - name: weather_code
-        description: "Code météo WMO"
-      - name: weather_description
-        description: "Description lisible du code météo"
+          - accepted_values:
+              arguments:
+                values: ['Nantes', 'Paris', 'Dublin']
+
       - name: fetched_at
-        description: "Timestamp du relevé"
+        description: "Horodatage UTC du relevé."
+        tests:
+          - not_null
+
+      - name: temperature_celsius
+        description: "Température mesurée en degrés Celsius."
         tests:
           - not_null

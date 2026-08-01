@@ -4,12 +4,15 @@ x-airflow-common:
   environment:
     &airflow-common-env
     PYTHONPATH: /opt/airflow
+    _PIP_ADDITIONAL_REQUIREMENTS: "${_PIP_ADDITIONAL_REQUIREMENTS:-dbt-postgres}"
+    DBT_SEND_ANONYMOUS_USAGE_STATS: "false"
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-data_warehouse}
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__TEST_CONNECTION: 'Enabled'
+    POSTGRES_HOST: postgres
   volumes:
     - ../dags:/opt/airflow/dags
     - ../scripts:/opt/airflow/scripts

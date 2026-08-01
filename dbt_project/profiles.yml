@@ -1,4 +1,4 @@
-config:
+flags:
   send_anonymous_usage_stats: False
 
 weather_dbt:
@@ -6,7 +6,7 @@ weather_dbt:
   outputs:
     dev:
       type: postgres
-      host: localhost       # Ou 'postgres' si dbt est exécuté dans Docker
+      host: "{{ env_var('POSTGRES_HOST', 'localhost') }}"  # Ou 'postgres' si dbt est exécuté dans Docker
       user: postgres
       pass: postgres
       port: 5432
