@@ -203,8 +203,39 @@
             99: '⛈️',
         };
 
+        const WEATHER_DESCRIPTIONS = {
+            0: 'Clear sky',
+            1: 'Mainly clear',
+            2: 'Partly cloudy',
+            3: 'Overcast',
+            45: 'Foggy',
+            48: 'Depositing rime fog',
+            51: 'Light drizzle',
+            53: 'Moderate drizzle',
+            55: 'Dense drizzle',
+            61: 'Slight rain',
+            63: 'Moderate rain',
+            65: 'Heavy rain',
+            71: 'Slight snow',
+            73: 'Moderate snow',
+            75: 'Heavy snow',
+            77: 'Snow grains',
+            80: 'Slight rain showers',
+            81: 'Moderate rain showers',
+            82: 'Violent rain showers',
+            85: 'Slight snow showers',
+            86: 'Heavy snow showers',
+            95: 'Thunderstorm',
+            96: 'Thunderstorm with slight hail',
+            99: 'Thunderstorm with heavy hail',
+        };
+
         function getWeatherIcon(code) {
             return weatherIcons[code] || '🌤️';
+        }
+
+        function getWeatherLabel(code) {
+            return WEATHER_DESCRIPTIONS[code] || 'Weather conditions';
         }
 
         function formatDate(dateString) {
@@ -217,17 +248,16 @@
             });
         }
 
-        function displayWeather(data) {
+        function displayWeather(current) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error').style.display = 'none';
 
-            const weather = data.data;
-            document.getElementById('cityName').textContent = weather.city || 'Nantes';
-            document.getElementById('weatherIcon').textContent = getWeatherIcon(weather.weather_code);
-            document.getElementById('temperature').textContent = `${weather.temperature_celsius}°C`;
-            document.getElementById('weatherDescription').textContent = weather.weather_description || 'Météo actuelle';
-            document.getElementById('windSpeed').textContent = `${weather.windspeed_kmh} km/h`;
-            document.getElementById('fetchedAt').textContent = formatDate(weather.fetched_at);
+            document.getElementById('cityName').textContent = 'Nantes';
+            document.getElementById('weatherIcon').textContent = getWeatherIcon(current.weathercode);
+            document.getElementById('temperature').textContent = `${current.temperature}°C`;
+            document.getElementById('weatherDescription').textContent = getWeatherLabel(current.weathercode);
+            document.getElementById('windSpeed').textContent = `${current.windspeed} km/h`;
+            document.getElementById('fetchedAt').textContent = formatDate(new Date().toISOString());
             document.getElementById('weatherCard').style.display = 'block';
         }
 
@@ -243,12 +273,17 @@
             document.getElementById('weatherCard').style.display = 'none';
 
             try {
-                const response = await fetch('/api/weather/nantes');
+                const response = await fetch(
+                    'https://api.open-meteo.com/v1/forecast?latitude=47.2184&longitude=-1.5536&current_weather=true&timezone=auto'
+                );
+
                 if (!response.ok) {
                     throw new Error('Impossible de récupérer la météo de Nantes');
                 }
-                const payload = await response.json();
-                displayWeather(payload);
+
+                const data = await response.json();
+                const current = data.current_weather;
+                displayWeather(current);
             } catch (error) {
                 showError(error.message);
             }
