@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Instant Météo Nantes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 520px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .button-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-size: 16px;
+            display: none;
+            margin-bottom: 10px;
+        }
+
+        .weather-card {
+            display: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .city-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .weather-icon {
+            font-size: 80px;
+            margin: 20px 0;
+        }
+
+        .temperature {
+            font-size: 48px;
+            font-weight: 700;
+            margin: 15px 0;
+        }
+
+        .weather-description {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+            padding-top: 20px;
+        }
+
+        .detail-label {
+            opacity: 0.8;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .error {
+            display: none;
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌤️ Instant Météo Nantes</h1>
+
+        <div class="button-row">
+            <button id="refreshButton">Actualiser</button>
+        </div>
+
+        <div class="loading" id="loading">Chargement...</div>
+
+        <div class="weather-card" id="weatherCard">
+            <div class="city-name" id="cityName"></div>
+            <div class="weather-icon" id="weatherIcon"></div>
+            <div class="temperature" id="temperature"></div>
+            <div class="weather-description" id="weatherDescription"></div>
+
+            <div class="weather-details">
+                <div class="detail">
+                    <div class="detail-label">Vent</div>
+                    <div class="detail-value" id="windSpeed"></div>
+                </div>
+                <div class="detail">
+                    <div class="detail-label">Mis à jour</div>
+                    <div class="detail-value" id="fetchedAt"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        const weatherIcons = {
+            0: '☀️',
+            1: '🌤️',
+            2: '⛅',
+            3: '☁️',
+            45: '🌫️',
+            48: '🌫️',
+            51: '🌧️',
+            53: '🌧️',
+            55: '🌧️',
+            61: '🌧️',
+            63: '🌧️',
+            65: '⛈️',
+            71: '❄️',
+            73: '❄️',
+            75: '❄️',
+            77: '❄️',
+            80: '🌧️',
+            81: '🌧️',
+            82: '⛈️',
+            85: '❄️',
+            86: '❄️',
+            95: '⛈️',
+            96: '⛈️',
+            99: '⛈️',
+        };
+
+        function getWeatherIcon(code) {
+            return weatherIcons[code] || '🌤️';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function displayWeather(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            const weather = data.data;
+            document.getElementById('cityName').textContent = weather.city || 'Nantes';
+            document.getElementById('weatherIcon').textContent = getWeatherIcon(weather.weather_code);
+            document.getElementById('temperature').textContent = `${weather.temperature_celsius}°C`;
+            document.getElementById('weatherDescription').textContent = weather.weather_description || 'Météo actuelle';
+            document.getElementById('windSpeed').textContent = `${weather.windspeed_kmh} km/h`;
+            document.getElementById('fetchedAt').textContent = formatDate(weather.fetched_at);
+            document.getElementById('weatherCard').style.display = 'block';
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('weatherCard').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = '❌ ' + message;
+        }
+
+        async function fetchWeather() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('weatherCard').style.display = 'none';
+
+            try {
+                const response = await fetch('/api/weather/nantes');
+                if (!response.ok) {
+                    throw new Error('Impossible de récupérer la météo de Nantes');
+                }
+                const payload = await response.json();
+                displayWeather(payload);
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        document.getElementById('refreshButton').addEventListener('click', fetchWeather);
+        fetchWeather();
+    </script>
+</body>
+</html>
