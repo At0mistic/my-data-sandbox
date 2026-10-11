@@ -18,3 +18,5 @@ models:
       +materialized: table
       fct_weather:
         +description: "Modèle d'exposition pour le dashboard"
+      fct_market_data:
+        +description: "Prix quotidiens de l'indice MSCI World ou de l'ETF URTH"

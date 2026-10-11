@@ -97,15 +97,17 @@ Dashboard UI
 │   └── create_connections.py    # Setup postgres_vercel connection
 │
 ├── dags/                        # Airflow DAGs
-│   └── weather_ingestion_dag.py # Fetch weather hourly
+│   ├── weather_ingestion_dag.py # Fetch weather hourly
+│   └── market_data_ingestion_dag.py # Fetch market prices on weekdays
 │
 ├── scripts/                     # Python utilities
-│   └── fetch_weather.py         # Open-Meteo API client
+│   ├── fetch_weather.py         # Open-Meteo API client
+│   └── fetch_market_data.py     # Yahoo Finance market data client
 │
 ├── dbt_project/                 # dbt transformations
 │   ├── profiles.yml             # dev & prod targets
 │   ├── models/stg/              # Staging layer
-│   └── models/marts/            # Final models (fct_weather)
+│   └── models/marts/            # Final models (fct_weather, fct_market_data)
 │
 ├── vercel-app/                  # Next.js dashboard
 │   ├── .env.local               # LOCAL: localhost:5432
@@ -143,6 +145,17 @@ dbt run --target prod   # Uses Vercel DB
 **Development:** Airflow → Vercel DB ← npm run dev → localhost:3000
 
 **Production:** Airflow → Vercel DB ← Vercel deployment → vercel.app
+
+### MSCI World market data
+
+The `market_data_ingestion_etl` DAG runs on weekdays and downloads daily
+history covering the last 15 years. It first requests Yahoo Finance's
+`^990100-USD-STRD` MSCI World index symbol and falls back to `URTH` (the iShares
+MSCI World ETF) if the index has no history available. `URTH` began trading in
+2012, so fallback data will not cover the full 15 years. The raw table is
+`stg_raw_market_data`; dbt builds `stg_market_data` and `fct_market_data`.
+Repeated runs upsert by ticker and trading date, making the historical reload
+safe to rerun.
 
 ---
 

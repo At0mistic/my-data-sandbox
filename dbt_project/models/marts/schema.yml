@@ -1,6 +1,22 @@
 version: 2
 
 models:
+  - name: fct_market_data
+    description: "Historique quotidien des prix du MSCI World ou de l'ETF URTH."
+    columns:
+      - name: ticker
+        description: "Symbole Yahoo Finance de l'instrument téléchargé."
+        tests:
+          - not_null
+      - name: trade_date
+        description: "Date de séance."
+        tests:
+          - not_null
+      - name: close
+        description: "Cours de clôture non ajusté."
+      - name: adj_close
+        description: "Cours de clôture ajusté des distributions."
+
   - name: fct_weather
     description: "Table de faits contenant les relevés météo horaires enrichis des agrégats quotidiens."
     columns:
